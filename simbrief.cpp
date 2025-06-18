@@ -23,6 +23,7 @@
 
 #include <cassert>
 #include <ctime>
+#include <cstring>
 
 #ifndef XPLM210
 #error "need at least XPLM210"
@@ -52,12 +53,16 @@ static XPLMDataRef seqno_dr, stale_dr;
 static void
 FetchDref(std::string& str, XPLMDataRef dr)
 {
+    str.clear();
     auto n = XPLMGetDatab(dr, nullptr, 0, 0);
     if (n == 0)
         return;
-    str.resize(n);
+
+    str.resize(n + 1);  // ensure we always have a trailing 0
     auto n1 = XPLMGetDatab(dr, (void *)str.data(), 0, n);
     assert(n == n1);
+    // in case a 0-terminated string was returned make it a compatible std::string
+    str.resize(strlen(str.c_str()));
 }
 
 #define FIND_DREF(f)  f ## _dr = XPLMFindDataRef("sbh/" #f)
