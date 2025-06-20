@@ -33,14 +33,8 @@ XPLMDebugString(const char *str)
 #include "XPLMUtilities.h"
 #endif
 
-static std::string prefix;
-void LogMsgInit(const std::string& pf)
-{
-    prefix = pf + ": ";
-}
-
-
-static std::string fmt_combined;    // don't allocate again & again
+// This function can be called from anywhere anytime (e.g. from destructors of static objects).
+// Avoid using static objects here that might already be gone when LogMsg is still be called.
 
 void
 LogMsgImpl(const char *fmt, ...)
@@ -49,7 +43,7 @@ LogMsgImpl(const char *fmt, ...)
 
     va_list ap;
     va_start(ap, fmt);
-    fmt_combined = prefix + fmt + "\n";
+    const std::string fmt_combined = std::string(log_msg_prefix) + fmt + "\n";
     vsnprintf(line, sizeof(line) - 3, fmt_combined.c_str(), ap);
     XPLMDebugString(line);
     va_end(ap);

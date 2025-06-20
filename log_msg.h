@@ -22,9 +22,13 @@
 
 #include <string>
 
+// define this in your plugin, e.g. 
+// const char* log_msg_prefix = "opensam: ";
+
+extern const char* log_msg_prefix;
+
 // functions
 extern void LogMsgImpl(const char *, ...) __attribute__ ((format (printf, 1, 2)));
-extern void LogMsgInit(const std::string& prefix);
 
 #ifdef __FILE_NAME__
 #define LogMsg(fmt, ...) LogMsgImpl(__FILE_NAME__  ":%d: " fmt, __LINE__ __VA_OPT__(,) __VA_ARGS__)
