@@ -47,7 +47,7 @@ void LogMsgImpl(const char *fmt, ...) {
 
 void LogMsgRawImpl(const char *file, int line_no, const char *str) {
     char line[1024];
-    snprintf(line, sizeof(line) - 3, "%s:%d: *raw*\n", file, line_no);
+    snprintf(line, sizeof(line) - 3, "%s%s:%d: *raw*\n", log_msg_prefix, file, line_no);
     XPLMDebugString(line);
     XPLMDebugString(str);
     XPLMDebugString("\n");
