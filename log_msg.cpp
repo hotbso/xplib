@@ -24,9 +24,7 @@
 #include "log_msg.h"
 
 #ifdef LOCAL_DEBUGSTRING
-void
-XPLMDebugString(const char *str)
-{
+void XPLMDebugString(const char *str) {
     fputs(str, stdout); fflush(stdout);
 }
 #else
@@ -36,9 +34,7 @@ XPLMDebugString(const char *str)
 // This function can be called from anywhere anytime (e.g. from destructors of static objects).
 // Avoid using static objects here that might already be gone when LogMsg is still be called.
 
-void
-LogMsgImpl(const char *fmt, ...)
-{
+void LogMsgImpl(const char *fmt, ...) {
     char line[1024];
 
     va_list ap;
@@ -47,4 +43,16 @@ LogMsgImpl(const char *fmt, ...)
     vsnprintf(line, sizeof(line) - 3, fmt_combined.c_str(), ap);
     XPLMDebugString(line);
     va_end(ap);
+}
+
+void LogMsgRawImpl(const char *file, int line_no, const char *str) {
+    char line[1024];
+    snprintf(line, sizeof(line) - 3, "%s:%d: *raw*\n", file, line_no);
+    XPLMDebugString(line);
+    XPLMDebugString(str);
+    XPLMDebugString("\n");
+}
+
+void LogMsgRawImpl(const char *file, int line_no, const std::string& str) {
+    LogMsgRawImpl(file, line_no, str.c_str());
 }
