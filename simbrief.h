@@ -40,6 +40,12 @@ struct Ofp
     F(est_on);
     F(est_in);
 
+    // cdm fields
+    F(cdm_tobt);
+    F(cdm_tsat);
+    F(cdm_runway);
+    F(cdm_sid);
+
     // return ptr to an OFP if a newer version is available or nullptr
     static std::unique_ptr<Ofp> LoadIfNewer(int cur_seqno);
 

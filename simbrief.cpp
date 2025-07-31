@@ -35,19 +35,27 @@
 
 static bool drefs_loaded, sbh_unavail;
 
-#define DEF_DR(f) static XPLMDataRef f ## _dr;
-DEF_DR(icao_airline);
-DEF_DR(flight_number);
-DEF_DR(aircraft_icao);
-DEF_DR(destination);
-DEF_DR(pax_count);
-DEF_DR(est_out);
-DEF_DR(est_off);
-DEF_DR(est_on);
-DEF_DR(est_in);
-#undef DEF_DREF_DR
+#define DEF_OFP_DR(f) static XPLMDataRef f ## _dr;
+#define DEF_CDM_DR(f) static XPLMDataRef cdm_ ## f ## _dr;
+DEF_OFP_DR(icao_airline);
+DEF_OFP_DR(flight_number);
+DEF_OFP_DR(aircraft_icao);
+DEF_OFP_DR(destination);
+DEF_OFP_DR(pax_count);
+DEF_OFP_DR(est_out);
+DEF_OFP_DR(est_off);
+DEF_OFP_DR(est_on);
+DEF_OFP_DR(est_in);
+DEF_CDM_DR(tobt);
+DEF_CDM_DR(tsat);
+DEF_CDM_DR(runway);
+DEF_CDM_DR(sid);
 
-static XPLMDataRef seqno_dr, stale_dr;
+#undef DEF_OFP_DREF_DR
+#undef DEF_CDM_DREF_DR
+
+static XPLMDataRef seqno_dr, cdm_seqno_dr, stale_dr;
+static int sbh_ofp_seqno, sbh_cdm_seqno, my_seqno;
 
 // fetch byte data into a string
 static void
@@ -65,12 +73,16 @@ FetchDref(std::string& str, XPLMDataRef dr)
     str.resize(strlen(str.c_str()));
 }
 
-#define FIND_DREF(f)  f ## _dr = XPLMFindDataRef("sbh/" #f)
-#define GET_DREF(f) FetchDref(ofp->f, f ## _dr)
-#define LOG_DREF(f) LogMsg(" " #f ": '%s'", ofp->f.c_str())
+#define FIND_OFP_DREF(f)  f ## _dr = XPLMFindDataRef("sbh/" #f)
+#define FIND_CDM_DREF(f)  cdm_ ## f ## _dr = XPLMFindDataRef("sbh/cdm/" #f)
+
+#define GET_OFP_DREF(f) FetchDref(ofp->f, f ## _dr)
+#define GET_CDM_DREF(f) FetchDref(ofp->cdm_ ## f, cdm_ ## f ## _dr)
+#define LOG_FIELD(f) LogMsg(" " #f ": '%s'", ofp->f.c_str())
+
 
 std::unique_ptr<Ofp>
-Ofp::LoadIfNewer(int cur_seqno)
+Ofp::LoadIfNewer([[maybe_unused]] int cur_seqno)
 {
     if (sbh_unavail)
         return nullptr;
@@ -85,20 +97,32 @@ Ofp::LoadIfNewer(int cur_seqno)
 
         seqno_dr = XPLMFindDataRef("sbh/seqno");
 
-        FIND_DREF(icao_airline);
-        FIND_DREF(flight_number);
-        FIND_DREF(aircraft_icao);
-        FIND_DREF(destination);
-        FIND_DREF(pax_count);
-        FIND_DREF(est_out);
-        FIND_DREF(est_off);
-        FIND_DREF(est_on);
-        FIND_DREF(est_in);
+        FIND_OFP_DREF(icao_airline);
+        FIND_OFP_DREF(flight_number);
+        FIND_OFP_DREF(aircraft_icao);
+        FIND_OFP_DREF(destination);
+        FIND_OFP_DREF(pax_count);
+        FIND_OFP_DREF(est_out);
+        FIND_OFP_DREF(est_off);
+        FIND_OFP_DREF(est_on);
+        FIND_OFP_DREF(est_in);
+
+        FIND_CDM_DREF(tobt);
+        if (cdm_tobt_dr) {      // for the transitional phase
+            FIND_CDM_DREF(tsat);
+            FIND_CDM_DREF(runway);
+            FIND_CDM_DREF(sid);
+        }
     }
 
-    int seqno = XPLMGetDatai(seqno_dr);
-    if (seqno <= cur_seqno)
-        return nullptr;
+    int ofp_seqno = XPLMGetDatai(seqno_dr);
+    int cdm_seqno = XPLMGetDatai(cdm_seqno_dr);
+    if (ofp_seqno == sbh_ofp_seqno && cdm_seqno == sbh_cdm_seqno)
+       return nullptr;
+
+    sbh_ofp_seqno = ofp_seqno;
+    sbh_cdm_seqno = cdm_seqno;
+    my_seqno++;
 
     int stale = XPLMGetDatai(stale_dr);
     if (stale)
@@ -106,47 +130,78 @@ Ofp::LoadIfNewer(int cur_seqno)
 
     auto ofp = std::make_unique<Ofp>();
 
-    ofp->seqno = seqno;
-    GET_DREF(icao_airline);
-    GET_DREF(flight_number);
-    GET_DREF(aircraft_icao);
-    GET_DREF(destination);
-    GET_DREF(pax_count);
-    GET_DREF(est_out);
-    GET_DREF(est_off);
-    GET_DREF(est_on);
-    GET_DREF(est_in);
+    ofp->seqno = my_seqno;
+    GET_OFP_DREF(icao_airline);
+    GET_OFP_DREF(flight_number);
+    GET_OFP_DREF(aircraft_icao);
+    GET_OFP_DREF(destination);
+    GET_OFP_DREF(pax_count);
+    GET_OFP_DREF(est_out);
+    GET_OFP_DREF(est_off);
+    GET_OFP_DREF(est_on);
+    GET_OFP_DREF(est_in);
 
-    LogMsg("From simbrief_hub: Seqno: %d", seqno);
-    LOG_DREF(icao_airline);
-    LOG_DREF(flight_number);
-    LOG_DREF(aircraft_icao);
-    LOG_DREF(destination);
-    LOG_DREF(pax_count);
-    LOG_DREF(est_out);
-    LOG_DREF(est_off);
-    LOG_DREF(est_on);
-    LOG_DREF(est_in);
+    if (cdm_tobt_dr) {
+        GET_CDM_DREF(tobt);
+        GET_CDM_DREF(tsat);
+        GET_CDM_DREF(runway);
+        GET_CDM_DREF(sid);
+    }
+
+    LogMsg("From simbrief_hub: Seqno: %d, Cdm: %d", ofp_seqno, cdm_seqno);
+    LOG_FIELD(icao_airline);
+    LOG_FIELD(flight_number);
+    LOG_FIELD(aircraft_icao);
+    LOG_FIELD(destination);
+    LOG_FIELD(pax_count);
+    LOG_FIELD(est_out);
+    LOG_FIELD(est_off);
+    LOG_FIELD(est_on);
+    LOG_FIELD(est_in);
+    LOG_FIELD(cdm_tobt);
+    LOG_FIELD(cdm_tsat);
+    LOG_FIELD(cdm_runway);
+    LOG_FIELD(cdm_sid);
 
     return ofp;
 }
 
-const std::string
-Ofp::GenDepartureStr() const
-{
+const std::string Ofp::GenDepartureStr() const {
     std::string str;
-    str = icao_airline + flight_number + " " + aircraft_icao + " TO " +
-        destination;
+    str = icao_airline + flight_number + " " + aircraft_icao + " TO " + destination;
 
     time_t out_time = atol(est_out.c_str());
     time_t off_time = atol(est_off.c_str());
 
-    auto out_tm = *std::gmtime(&out_time);
-    auto off_tm = *std::gmtime(&off_time);
-    char out[20], off[20];
-    strftime(out, sizeof(out), " OUT %H:%M", &out_tm);
-    strftime(off, sizeof(off), " OFF %H:%M", &off_tm);
-    str.append(out);
-    str.append(off);
+    bool have_cdm{false};
+    if (cdm_tobt.empty()) {
+        auto out_tm = *std::gmtime(&out_time);
+        char out[20];
+        strftime(out, sizeof(out), " OUT %H%M", &out_tm);
+        str.append(out);
+    } else {
+        have_cdm = true;
+        if (cdm_tsat != cdm_tobt) {
+            str.append(" TOBT " + cdm_tobt);
+        }
+
+        if (!cdm_tsat.empty()) {
+            str.append(" TSAT " + cdm_tsat);
+        }
+    }
+
+    if (!have_cdm) {
+        auto off_tm = *std::gmtime(&off_time);
+        char off[20];
+        strftime(off, sizeof(off), " OFF %H%M", &off_tm);
+        str.append(off);
+    }
+
+    if (!cdm_runway.empty())
+        str.append(" RWY " + cdm_runway);
+
+    if (!cdm_sid.empty())
+        str.append(" SID " + cdm_sid);
+
     return str;
 }
