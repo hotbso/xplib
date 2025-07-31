@@ -31,6 +31,8 @@
 bool
 HttpGet(const std::string& url, std::string& data, int timeout)
 {
+    data.clear();
+
     DWORD dwSize = 0;
     DWORD dwDownloaded = 0;
     BOOL  bResults = FALSE;
@@ -143,7 +145,7 @@ error_out:
     if (hConnect) WinHttpCloseHandle(hConnect);
     if (hSession) WinHttpCloseHandle(hSession);
 
-    LogMsg("sbh_http_get result: %d", result);
+    //LogMsg("HttpGet result: %d", result);
     return result;
 }
 
