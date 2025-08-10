@@ -106,9 +106,10 @@ Ofp::LoadIfNewer([[maybe_unused]] int cur_seqno)
         FIND_OFP_DREF(est_off);
         FIND_OFP_DREF(est_on);
         FIND_OFP_DREF(est_in);
+        FIND_CDM_DREF(seqno);
 
-        FIND_CDM_DREF(tobt);
-        if (cdm_tobt_dr) {      // for the transitional phase
+        if (cdm_seqno_dr) {      // for the transitional phase
+            FIND_CDM_DREF(tobt);
             FIND_CDM_DREF(tsat);
             FIND_CDM_DREF(runway);
             FIND_CDM_DREF(sid);
