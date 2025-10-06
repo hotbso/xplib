@@ -51,12 +51,12 @@ WidgetCtx::Show()
     XPLMGetScreenBoundsGlobal(&xl, &yr, &xr, &yl);
 
     l = (l + w < xr) ? l : xr - w - 50;
-    l = (l <= xl) ? 20 : l;
+    l = (l <= xl) ? xl + 20 : l;
 
     t = (t + h < yr) ? t : (yr - h - 50);
     t = (t >= h) ? t : (yr / 2);
 
-    LogMsg("ShowWidget: s: (%d, %d) -> (%d, %d), w: (%d, %d) -> (%d,%d)",
+    LogMsg("WidgetCtx::Show: s: (%d, %d) -> (%d, %d), w: (%d, %d) -> (%d,%d)",
            xl, yl, xr, yr, l, t, l + w, t - h);
 
     XPSetWidgetGeometry(widget, l, t, l + w, t - h);
@@ -86,4 +86,5 @@ WidgetCtx::Hide()
 {
     XPGetWidgetGeometry(widget, &l, &t, NULL, NULL);
     XPHideWidget(widget);
+    LogMsg("WidgetCtx::Hide: widget at (%d, %d)", l, t);
 }
