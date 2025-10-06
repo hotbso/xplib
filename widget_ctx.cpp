@@ -26,8 +26,7 @@
 
 static XPLMDataRef vr_enabled_dr;
 
-void WidgetCtx::Set(XPWidgetID widget_, int left, int top, int width, int height)
-{
+void WidgetCtx::Set(XPWidgetID widget_, int left, int top, int width, int height) {
     widget = widget_;
     l = left;
     t = top;
@@ -35,9 +34,7 @@ void WidgetCtx::Set(XPWidgetID widget_, int left, int top, int width, int height
     h = height;
 }
 
-void
-WidgetCtx::Show()
-{
+void WidgetCtx::Show() {
     if (vr_enabled_dr == nullptr)
         vr_enabled_dr = XPLMFindDataRef("sim/graphics/VR/enabled");
 
@@ -56,8 +53,7 @@ WidgetCtx::Show()
     t = (t + h < yr) ? t : (yr - h - 50);
     t = (t >= h) ? t : (yr / 2);
 
-    LogMsg("WidgetCtx::Show: s: (%d, %d) -> (%d, %d), w: (%d, %d) -> (%d,%d)",
-           xl, yl, xr, yr, l, t, l + w, t - h);
+    LogMsg("WidgetCtx::Show: s: (%d, %d) -> (%d, %d), w: (%d, %d) -> (%d,%d)", xl, yl, xr, yr, l, t, l + w, t - h);
 
     XPSetWidgetGeometry(widget, l, t, l + w, t - h);
     XPShowWidget(widget);
@@ -65,13 +61,13 @@ WidgetCtx::Show()
     int in_vr = (NULL != vr_enabled_dr) && XPLMGetDatai(vr_enabled_dr);
     if (in_vr) {
         LogMsg("VR mode detected");
-        XPLMWindowID window =  XPGetWidgetUnderlyingWindow(widget);
+        XPLMWindowID window = XPGetWidgetUnderlyingWindow(widget);
         XPLMSetWindowPositioningMode(window, xplm_WindowVR, -1);
         in_vr = 1;
     } else {
         if (in_vr) {
             LogMsg("widget now out of VR, map at (%d,%d)", l, t);
-            XPLMWindowID window =  XPGetWidgetUnderlyingWindow(widget);
+            XPLMWindowID window = XPGetWidgetUnderlyingWindow(widget);
             XPLMSetWindowPositioningMode(window, xplm_WindowPositionFree, -1);
 
             // A resize is necessary so it shows up on the main screen again
@@ -81,9 +77,7 @@ WidgetCtx::Show()
     }
 }
 
-void
-WidgetCtx::Hide()
-{
+void WidgetCtx::Hide() {
     XPGetWidgetGeometry(widget, &l, &t, NULL, NULL);
     XPHideWidget(widget);
     LogMsg("WidgetCtx::Hide: widget at (%d, %d)", l, t);
