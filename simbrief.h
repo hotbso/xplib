@@ -43,6 +43,7 @@ struct Ofp
     // cdm fields
     F(cdm_tobt);
     F(cdm_tsat);
+    F(cdm_ctot);
     F(cdm_runway);
     F(cdm_sid);
 

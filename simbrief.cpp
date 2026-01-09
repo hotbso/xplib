@@ -48,6 +48,7 @@ DEF_OFP_DR(est_on);
 DEF_OFP_DR(est_in);
 DEF_CDM_DR(tobt);
 DEF_CDM_DR(tsat);
+DEF_CDM_DR(ctot);
 DEF_CDM_DR(runway);
 DEF_CDM_DR(sid);
 
@@ -111,6 +112,7 @@ Ofp::LoadIfNewer([[maybe_unused]] int cur_seqno)
         if (cdm_seqno_dr) {      // for the transitional phase
             FIND_CDM_DREF(tobt);
             FIND_CDM_DREF(tsat);
+            FIND_CDM_DREF(ctot);
             FIND_CDM_DREF(runway);
             FIND_CDM_DREF(sid);
         }
@@ -145,6 +147,8 @@ Ofp::LoadIfNewer([[maybe_unused]] int cur_seqno)
     if (cdm_tobt_dr) {
         GET_CDM_DREF(tobt);
         GET_CDM_DREF(tsat);
+        if (cdm_ctot_dr)            // was added later
+            GET_CDM_DREF(ctot);
         GET_CDM_DREF(runway);
         GET_CDM_DREF(sid);
     }
@@ -161,6 +165,7 @@ Ofp::LoadIfNewer([[maybe_unused]] int cur_seqno)
     LOG_FIELD(est_in);
     LOG_FIELD(cdm_tobt);
     LOG_FIELD(cdm_tsat);
+    LOG_FIELD(cdm_ctot);
     LOG_FIELD(cdm_runway);
     LOG_FIELD(cdm_sid);
 
@@ -188,6 +193,10 @@ const std::string Ofp::GenDepartureStr() const {
 
         if (!cdm_tsat.empty()) {
             str.append(" TSAT " + cdm_tsat);
+        }
+
+        if (!cdm_ctot.empty()) {
+            str.append(" CTOT " + cdm_ctot);
         }
     }
 
