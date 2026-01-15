@@ -35,10 +35,12 @@ struct Ofp
     F(aircraft_icao);
     F(destination);
     F(pax_count);
+    F(freight);
     F(est_out);
     F(est_off);
     F(est_on);
     F(est_in);
+    F(dx_rmk);
 
     // cdm fields
     F(cdm_tobt);

@@ -42,10 +42,13 @@ DEF_OFP_DR(flight_number);
 DEF_OFP_DR(aircraft_icao);
 DEF_OFP_DR(destination);
 DEF_OFP_DR(pax_count);
+DEF_OFP_DR(freight);
 DEF_OFP_DR(est_out);
 DEF_OFP_DR(est_off);
 DEF_OFP_DR(est_on);
 DEF_OFP_DR(est_in);
+DEF_OFP_DR(dx_rmk);
+
 DEF_CDM_DR(tobt);
 DEF_CDM_DR(tsat);
 DEF_CDM_DR(ctot);
@@ -59,32 +62,30 @@ static XPLMDataRef seqno_dr, cdm_seqno_dr, stale_dr;
 static int sbh_ofp_seqno, sbh_cdm_seqno, my_seqno;
 
 // fetch byte data into a string
-static void
-FetchDref(std::string& str, XPLMDataRef dr)
-{
+static void FetchDref(std::string& str, XPLMDataRef dr) {
     str.clear();
+    if (dr == nullptr)
+        return;
+
     auto n = XPLMGetDatab(dr, nullptr, 0, 0);
     if (n == 0)
         return;
 
     str.resize(n + 1);  // ensure we always have a trailing 0
-    auto n1 = XPLMGetDatab(dr, (void *)str.data(), 0, n);
+    auto n1 = XPLMGetDatab(dr, (void*)str.data(), 0, n);
     assert(n == n1);
     // in case a 0-terminated string was returned make it a compatible std::string
     str.resize(strlen(str.c_str()));
 }
 
-#define FIND_OFP_DREF(f)  f ## _dr = XPLMFindDataRef("sbh/" #f)
+#define FIND_OFP_DREF(f) f##_dr = XPLMFindDataRef("sbh/" #f)
 #define FIND_CDM_DREF(f)  cdm_ ## f ## _dr = XPLMFindDataRef("sbh/cdm/" #f)
 
 #define GET_OFP_DREF(f) FetchDref(ofp->f, f ## _dr)
 #define GET_CDM_DREF(f) FetchDref(ofp->cdm_ ## f, cdm_ ## f ## _dr)
 #define LOG_FIELD(f) LogMsg(" " #f ": '%s'", ofp->f.c_str())
 
-
-std::unique_ptr<Ofp>
-Ofp::LoadIfNewer([[maybe_unused]] int cur_seqno)
-{
+std::unique_ptr<Ofp> Ofp::LoadIfNewer([[maybe_unused]] int cur_seqno) {
     if (sbh_unavail)
         return nullptr;
 
@@ -107,21 +108,22 @@ Ofp::LoadIfNewer([[maybe_unused]] int cur_seqno)
         FIND_OFP_DREF(est_off);
         FIND_OFP_DREF(est_on);
         FIND_OFP_DREF(est_in);
-        FIND_CDM_DREF(seqno);
+        FIND_OFP_DREF(freight);
+        FIND_OFP_DREF(dx_rmk);
 
-        if (cdm_seqno_dr) {      // for the transitional phase
-            FIND_CDM_DREF(tobt);
-            FIND_CDM_DREF(tsat);
-            FIND_CDM_DREF(ctot);
-            FIND_CDM_DREF(runway);
-            FIND_CDM_DREF(sid);
-        }
+        FIND_CDM_DREF(seqno);
+        FIND_CDM_DREF(tobt);
+        FIND_CDM_DREF(tsat);
+        FIND_CDM_DREF(ctot);
+        FIND_CDM_DREF(runway);
+        FIND_CDM_DREF(sid);
+        drefs_loaded = true;
     }
 
     int ofp_seqno = XPLMGetDatai(seqno_dr);
     int cdm_seqno = XPLMGetDatai(cdm_seqno_dr);
     if (ofp_seqno == sbh_ofp_seqno && cdm_seqno == sbh_cdm_seqno)
-       return nullptr;
+        return nullptr;
 
     sbh_ofp_seqno = ofp_seqno;
     sbh_cdm_seqno = cdm_seqno;
@@ -139,19 +141,17 @@ Ofp::LoadIfNewer([[maybe_unused]] int cur_seqno)
     GET_OFP_DREF(aircraft_icao);
     GET_OFP_DREF(destination);
     GET_OFP_DREF(pax_count);
+    GET_OFP_DREF(freight);
     GET_OFP_DREF(est_out);
     GET_OFP_DREF(est_off);
     GET_OFP_DREF(est_on);
     GET_OFP_DREF(est_in);
-
-    if (cdm_tobt_dr) {
-        GET_CDM_DREF(tobt);
-        GET_CDM_DREF(tsat);
-        if (cdm_ctot_dr)            // was added later
-            GET_CDM_DREF(ctot);
-        GET_CDM_DREF(runway);
-        GET_CDM_DREF(sid);
-    }
+    GET_OFP_DREF(dx_rmk);
+    GET_CDM_DREF(tobt);
+    GET_CDM_DREF(tsat);
+    GET_CDM_DREF(ctot);
+    GET_CDM_DREF(runway);
+    GET_CDM_DREF(sid);
 
     LogMsg("From simbrief_hub: Seqno: %d, Cdm: %d", ofp_seqno, cdm_seqno);
     LOG_FIELD(icao_airline);
@@ -159,10 +159,12 @@ Ofp::LoadIfNewer([[maybe_unused]] int cur_seqno)
     LOG_FIELD(aircraft_icao);
     LOG_FIELD(destination);
     LOG_FIELD(pax_count);
+    LOG_FIELD(freight);
     LOG_FIELD(est_out);
     LOG_FIELD(est_off);
     LOG_FIELD(est_on);
     LOG_FIELD(est_in);
+    LOG_FIELD(dx_rmk);
     LOG_FIELD(cdm_tobt);
     LOG_FIELD(cdm_tsat);
     LOG_FIELD(cdm_ctot);
