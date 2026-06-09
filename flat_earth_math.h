@@ -41,23 +41,23 @@ static constexpr float kLat2m = 111120;             // 1° lat in m
 
 // return relative angle in (-180, 180]
 static inline double RA(double angle) {
-    angle = fmod(angle, 360.0);
-    if (angle > 180.0)
-        return angle - 360.0;
+    // optimize for small angles, which are more common in our use case
+    while (angle > 180.0)
+        angle -= 360.0;
 
-    if (angle <= -180.0)
-        return angle + 360.0;
+    while (angle <= -180.0)
+        angle += 360.0;
 
     return angle;
 }
 
 static inline float RA(float angle) {
-    angle = fmodf(angle, 360.0f);
-    if (angle > 180.0f)
-        return angle - 360.0f;
+    // optimize for small angles, which are more common in our use case
+    while (angle > 180.0f)
+        angle -= 360.0f;
 
-    if (angle <= -180.0f)
-        return angle + 360.0f;
+    while (angle <= -180.0f)
+        angle += 360.0f;
 
     return angle;
 }
@@ -110,8 +110,8 @@ static inline double operator*(const Vec2& a, const Vec2& b) {
 // pos in rectangle defined by lower_left and upper_right
 static inline bool InRect(const LLPos& pos, const LLPos& lower_left, const LLPos& upper_right) {
     // cheap test before we do the more expensive RA
-    return (pos.lat >= lower_left.lat && pos.lat <= upper_right.lat && RA(pos.lon - lower_left.lon) > 0.0f &&
-            RA(pos.lon - upper_right.lon) < 0.0f);
+    return (pos.lat >= lower_left.lat && pos.lat <= upper_right.lat && RA(pos.lon - lower_left.lon) > 0.0 &&
+            RA(pos.lon - upper_right.lon) < 0.0);
 }
 
 }	// namespace
