@@ -19,7 +19,6 @@
 //    USA
 //
 
-
 // Contrary to common belief the earth is flat. She has just a weird coordinate system with (lon,lat).
 // To overcome this we attach a 2-d vector space at each (lon, lat) point with orthogonal
 // basis scaled in meters. So (lon2, lat2) - (lon1, lat1) gives rise to a vector v in the vector space
@@ -30,14 +29,12 @@
 // a tangent space. But this is for visualisation only.
 //
 
-#ifndef _FLAT_EARTH_MATH_
-#define _FLAT_EARTH_MATH_
-
+#pragma once
 #include <cmath>
 
 namespace flat_earth_math {
 
-static constexpr float kLat2m = 111120;             // 1° lat in m
+static constexpr float kLat2m = 111120;  // 1° lat in m
 
 // return relative angle in (-180, 180]
 static inline double RA(double angle) {
@@ -72,9 +69,7 @@ struct Vec2 {
     double x, y;  // right, up
 };
 
-static inline double len(const Vec2& v) {
-    return sqrt(v.x * v.x + v.y * v.y);
-}
+static inline double len(const Vec2& v) { return sqrt(v.x * v.x + v.y * v.y); }
 
 // pos b - pos a
 static inline Vec2 operator-(const LLPos& b, const LLPos& a) {
@@ -82,25 +77,18 @@ static inline Vec2 operator-(const LLPos& b, const LLPos& a) {
 }
 
 // pos + vec
-static inline LLPos operator+(const LLPos &p, const Vec2& v) {
-	return {RA(p.lon + v.x / (kLat2m * cosf(p.lat * 0.01745329252))),
-			RA(p.lat + v.y / kLat2m)};
+static inline LLPos operator+(const LLPos& p, const Vec2& v) {
+    return {RA(p.lon + v.x / (kLat2m * cosf(p.lat * 0.01745329252))), RA(p.lat + v.y / kLat2m)};
 }
 
 // vec b - vec a
-static inline Vec2 operator-(const Vec2& b, const Vec2& a) {
-    return {b.x - a.x, b.y - a.y};
-}
+static inline Vec2 operator-(const Vec2& b, const Vec2& a) { return {b.x - a.x, b.y - a.y}; }
 
 // vec + vec
-static inline Vec2 operator+(const Vec2& a, const Vec2& b) {
-    return {a.x + b.x, a.y + b.y};
-}
+static inline Vec2 operator+(const Vec2& a, const Vec2& b) { return {a.x + b.x, a.y + b.y}; }
 
 // c * vec
-static inline Vec2 operator*(double c, const Vec2& v) {
-    return {c * v.x, c * v.y};
-}
+static inline Vec2 operator*(double c, const Vec2& v) { return {c * v.x, c * v.y}; }
 
 // vec * vec
 static inline double operator*(const Vec2& a, const Vec2& b) {
@@ -109,10 +97,15 @@ static inline double operator*(const Vec2& a, const Vec2& b) {
 
 // pos in rectangle defined by lower_left and upper_right
 static inline bool InRect(const LLPos& pos, const LLPos& lower_left, const LLPos& upper_right) {
-    // cheap test before we do the more expensive RA
-    return (pos.lat >= lower_left.lat && pos.lat <= upper_right.lat && RA(pos.lon - lower_left.lon) > 0.0 &&
-            RA(pos.lon - upper_right.lon) < 0.0);
+    if (!(pos.lat >= lower_left.lat && pos.lat <= upper_right.lat))
+        return false;
+
+    double lon = RA(pos.lon);  // normalize just in case
+    if (lower_left.lon < upper_right.lon)
+        return (lower_left.lon < lon && lon <= upper_right.lon);
+
+    // Handle the case where the bounds cross the antimeridian
+    return (lon > lower_left.lon || lon <= upper_right.lon);
 }
 
-}	// namespace
-#endif
+}  // namespace flat_earth_math
